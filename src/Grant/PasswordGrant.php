@@ -110,7 +110,6 @@ class PasswordGrant extends AbstractGrant
         );
 
         if (($client instanceof ClientEntity) === false) {
-            $this->server->getEventEmitter()->emit(new Event\ClientAuthenticationFailedEvent($this->server->getRequest()));
             throw new Exception\InvalidClientException();
         }
 
@@ -128,7 +127,6 @@ class PasswordGrant extends AbstractGrant
         $userId = call_user_func($this->getVerifyCredentialsCallback(), $username, $password);
 
         if ($userId === false) {
-            $this->server->getEventEmitter()->emit(new Event\UserAuthenticationFailedEvent($this->server->getRequest()));
             throw new Exception\InvalidCredentialsException();
         }
 
