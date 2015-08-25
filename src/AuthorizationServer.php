@@ -287,7 +287,7 @@ class AuthorizationServer extends AbstractServer implements AuthorizationServerI
     {
         try {
             $responseAccessToken = $this->retrieveGrant()->completeFlow();
-            $this->getEventEmitter()->emit(new AuthenticationSuccess('login_successful'));
+            $this->getEventEmitter()->emit(new AuthenticationSuccess($this->getRequest()));
             return $responseAccessToken;
         } catch (InvalidClientException $e) {
             $this
