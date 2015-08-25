@@ -81,7 +81,6 @@ class ClientCredentialsGrant extends AbstractGrant
         );
 
         if (($client instanceof ClientEntity) === false) {
-            $this->server->getEventEmitter()->emit(new Event\ClientAuthenticationFailedEvent($this->server->getRequest()));
             throw new Exception\InvalidClientException();
         }
 
