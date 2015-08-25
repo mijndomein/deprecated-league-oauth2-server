@@ -11,9 +11,14 @@
 
 namespace League\OAuth2\Server;
 
+use League\OAuth2\Server\Event\ClientAuthenticationFailedEvent;
+use League\OAuth2\Server\Event\UserAuthenticationFailedEvent;
+use League\OAuth2\Server\Exception\InvalidClientException;
+use League\OAuth2\Server\Exception\InvalidCredentialsException;
 use League\OAuth2\Server\Grant\GrantTypeInterface;
 use League\OAuth2\Server\ServerInterface\AuthorizationServer as AuthorizationServerInterface;
 use League\OAuth2\Server\TokenType\Bearer;
+use League\OAuth2\Server\Event\AuthenticationSuccess;
 
 /**
  * OAuth 2.0 authorization server class
@@ -280,6 +285,31 @@ class AuthorizationServer extends AbstractServer implements AuthorizationServerI
      */
     public function issueAccessToken()
     {
+        try {
+            $responseAccessToken = $this->retrieveGrant()->completeFlow();
+            $this->getEventEmitter()->emit(new AuthenticationSuccess('login_successful'));
+            return $responseAccessToken;
+        } catch (InvalidClientException $e) {
+            $this
+                ->getEventEmitter()
+                ->emit(new ClientAuthenticationFailedEvent($this->getRequest()));
+            throw $e;
+        } catch (InvalidCredentialsException $e) {
+            $this
+                ->getEventEmitter()
+                ->emit(new UserAuthenticationFailedEvent($this->getRequest()));
+            throw $e;
+        }
+    }
+
+    /**
+     * @return GrantTypeInterface
+     * @throws Exception\InvalidGrantException
+     * @throws Exception\InvalidRequestException
+     * @throws Exception\UnsupportedGrantTypeException
+     */
+    private function retrieveGrant()
+    {
         $grantType = $this->getRequest()->request->get('grant_type');
         if (is_null($grantType)) {
             throw new Exception\InvalidRequestException('grant_type');
@@ -289,8 +319,8 @@ class AuthorizationServer extends AbstractServer implements AuthorizationServerI
         if (!in_array($grantType, array_keys($this->grantTypes))) {
             throw new Exception\UnsupportedGrantTypeException($grantType);
         }
-
-        // Complete the flow
-        return $this->getGrantType($grantType)->completeFlow();
+        return $this->getGrantType(
+            $grantType
+        );
     }
 }
